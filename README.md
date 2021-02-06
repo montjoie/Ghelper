@@ -192,6 +192,7 @@ Constraints:
 * earch defconfig could boot more than 1 board
 * Filtering board by arch is not a correct way (example lot of ppc boards work with only a subset of ppc defconfigs.)
 * So the only viable way to find board to boot is to filter per defconfig or better per CONFIG_ (permiting to use randconfig)
+* Each defconfig could be built more then once (due to toolchain, or different combination of CONFIG_ hacks)
 
 Example: qemu-cubieboard could be booted by
 * arm/multi_v7_defconfig/gcc
@@ -231,3 +232,20 @@ Tests
 * Gentoo specifics
 * general tests
 	* kselftest
+
+# Implementation details
+## build
+### config tree
+build-config/arch/defconfigname
+In this directory a filename "defconfig" containing the defconfig name must be present.
+A directory toolchain must exists, with a subdirectory directory per toolchain.
+
+### toolchain list
+In toolchains, there is a directory per build host arch.
+This permits to handle native build per build host arch.
+Example: building arm64 on an arm64 could be different than building it on x86_64.
+
+Then in toolchains/buildhostarch/, a directory for each arch must exists.
+For each arch, an optional toolchain directory containing a file "opts" for MAKEOPTS options.
+
+Example: Ghelper/toolchains/x86_64/x86_64/clang/opts contains MAKEOPTS for using clang when building for x86_64.
