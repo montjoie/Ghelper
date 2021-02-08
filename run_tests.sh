@@ -1,76 +1,67 @@
 #!/bin/bash
 
+# check the artifact directory of a build for generating LAVA jobs
+# LAVA lifecycle (Generating, submit, check) is done by run_tests.py
+
 ARCH=$1
-BUILDER_NAME=$2
+BUILD_NAME=$2
 BUILD_NUMBER=$3
-FILESERVER=/var/www/fileserver/
+FILESERVER=/var/www/fileserver
 LAVA_SERVER=140.211.166.173:10080
 STORAGE_SERVER=140.211.166.171:8080
 SCRIPT_DIR=$(cd "$(dirname "$0")"|| exit;pwd)
 
-tmpyml=$(mktemp "/tmp/XXXXXX.yml")
-
-
-start_job_get_job_id() {
-  lavacli -i buildbot jobs submit "$tmpyml"
-  rm -f "$tmpyml"
+usage() {
+	echo "Usage: $0 ARCH BUILD_NAME BUILD_NUMBER"
 }
 
-get_job_state() {
-  lavacli --id buildbot jobs show "${job_id}" | grep "state       :" | awk '{print $3}'
-}
+if [ -z "$ARCH" ] ;then
+	usage
+	exit 1
+fi
 
-get_job_results() {
-  lavacli -i buildbot results "${job_id}"
-}
+if [ -z "$BUILD_NAME" ] ;then
+	usage
+	exit 1
+fi
 
-check_job_state() {
-  job_state="$(get_job_state)"
-  if [[ $job_state != "Finished" ]]; then
-    echo -n -e "The job $job_id is $job_state"
-    while [[ $job_state != "Finished" ]]; do
-      job_state="$(get_job_state)"
-      sleep 5
-      echo -n -e "."
-    done
-  fi
-  echo The job "${job_id}" is "${job_state}"
-}
+if [ -z "$BUILD_NUMBER" ] ;then
+	usage
+	exit 1
+fi
 
-get_failed_tasks() {
-  echo "$(get_job_results)" | grep fail
-}
+# permit to override default
+if [ -e config.ini ];then
+	echo "INFO: Loading default from config.ini"
+	. config.ini
+fi
 
-check_tasks() {
-  failed_tasks="$(get_failed_tasks)"
-  if [ "$failed_tasks" ]; then
-    echo "Following lava tasks failed"
-    echo "$failed_tasks"
-    # failing this task
-    exit 1
-  else
-    echo "Lava tasks runned succesfully"
-    echo "$get_job_results"
-  fi
-}
+SCANDIR="$FILESERVER/$BUILD_NAME/$ARCH/$BUILD_NUMBER/"
+if [ ! -e "$SCANDIR" ];then
+	echo "ERROR: $SCANDIR does not exists"
+	exit 1
+fi
 
-display_lava_url () {
-  echo "LAVAJOB_URL=http://$LAVA_SERVER/scheduler/job/$job_id"
-}
+echo "CHECK $SCANDIR"
+for defconfig in $(ls $SCANDIR)
+do
+	echo "CHECK: $defconfig"
+	for toolchain in $(ls $SCANDIR/$defconfig/)
+	do
+		echo "CHECK: toolchain $toolchain"
+		echo "BOOT: $SCANDIR/$defconfig/$toolchain"
+		./run_tests.py --arch $ARCH \
+			--buildname $BUILD_NAME \
+			--buildnumber $BUILD_NUMBER \
+			--toolchain $toolchain \
+			--defconfig $defconfig \
+			--fileserver http://$STORAGE_SERVER/ \
+			--waitforjobsend
+		if [ $? -ne 0 ];then
+			echo "ERROR: there is some fail"
+			exit 1
+		fi
+	done
+done
 
-configure_lava_boot() {
-  KERNEL_STORAGE_URL=http://"${STORAGE_SERVER}"/"${BUILDER_NAME}"/"${BUILD_NUMBER}"/bzImage
-  latest_stage3_amd64=$(curl -s http://gentoo.mirrors.ovh.net/gentoo-distfiles/releases/amd64/autobuilds/latest-stage3-amd64.txt)
-  rootfs_url=$(echo "$latest_stage3_amd64" | awk 'NR==3{ print $1 }')
-  rootfs_digests_file=$(curl -s http://gentoo.mirrors.ovh.net/gentoo-distfiles/releases/amd64/autobuilds/"$rootfs_url".DIGESTS)
-  rootfs_digest=$(echo "$rootfs_digests_file" | awk 'NR==2{ print $1 }')
-  rootfs_fullurl=http://gentoo.mirrors.ovh.net/gentoo-distfiles/releases/amd64/autobuilds/"$rootfs_url"
-  sed -e "s@KERNEL_IMAGE_URL@${KERNEL_STORAGE_URL}@g" -e "s@ROOTFS_HASH@${rootfs_digest}@g" \
-  -e "s@ROOTFS_URL@${rootfs_fullurl}@g" "${SCRIPT_DIR}"/lava/job/gentoo-boot.yml > "$tmpyml"
-}
-
-configure_lava_boot
-job_id=$(start_job_get_job_id)
-display_lava_url
-check_job_state
-check_tasks
+exit 0

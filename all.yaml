@@ -1,0 +1,418 @@
+templates:
+  - name: SS-10
+    arch: sparc
+    larch: sparc
+    devicetype: qemu
+    devicename: qemu-SS-10
+    kernelfile: zImage
+    mach: sparc
+    qemu:
+        machine: SS-10
+        model: model=lance
+        netdevice: tap
+        memory: 256
+        guestfs_interface: scsi
+        console_device: ttyS0
+        append: "console=ttyS0 root=/dev/ram0"
+        no_kvm: True
+    configs:
+      - name: CONFIG_SUNLANCE
+    tags:
+      - ok
+  - name: QEMU sun4u
+    arch: sparc64
+    larch: sparc
+    devicetype: qemu
+    devicename: qemu-sun4u
+    kernelfile: vmlinux
+    mach: sparc64
+    qemu:
+        machine: sun4u
+        memory: 384
+        guestfs_interface: ide
+        model: model=sunhme
+        netdevice: tap
+        console_device: ttyS0
+        append: "console=ttyS0 root=/dev/ram0"
+        no_kvm: True
+    configs:
+      - name: CONFIG_PATA_CMD64X=
+        type: test
+      - name: CONFIG_RTC_DRV_M48T59=
+        type: test
+      - name: CONFIG_HAPPYMEAL=
+        type: test
+    tags:
+      - ok
+  - name: QEMU orangepi-pc
+    arch: arm
+    larch: arm
+    devicetype: qemu
+    devicename: qemu-orangepi-pc
+    kernelfile: zImage
+    dtb: sun8i-h3-orangepi-pc.dtb
+    mach: sunxi
+    qemu:
+        cpu: cortex-a7
+        machine: orangepi-pc
+        model: model=allwinner-sun8i-emac
+        memory: 1024
+        netdevice: tap
+        guestfs_interface: sd
+        console_device: ttyS0
+        append: "console=ttyS0 root=/dev/ram0"
+    configs:
+      - name: CONFIG_ARCH_SUNXI=y
+        type: mandatory
+    tags:
+      - ok
+      - h3
+  - name: qemu-arm64-virt
+    arch: arm64
+    devicetype: qemu
+    devicename: qemu-arm64-virt
+    kernelfile: Image
+    mach: qemu
+    qemu:
+        machine: virt
+        memory: 2048
+        cpu: cortex-a57
+        guestfs_interface: virtio
+        netdevice: tap
+        console_device: ttyAMA0
+        append: "console=ttyAMA0 root=/dev/ram0"
+    configs:
+      - name: RTC_DRV_PL031
+        type: test
+    tags:
+      - ok
+      - virt
+  - name: qemu-arm64-xlnx-versal-virt
+    arch: arm64
+    devicetype: qemu
+    devicename: qemu-arm64-xlnx-versal-virt
+    kernelfile: Image
+    mach: qemu
+    qemu:
+        machine: xlnx-versal-virt
+        memory: 2048
+        cpu: cortex-a53
+        guestfs_interface: none
+        model: model=cadence_gem
+        netdevice: tap
+        append: "console=ttyAMA0 earlycon=pl011,0xff000000 root=/dev/ram0"
+        extra_options:
+        - "-device virtio-blk-device,drive=lavatest"
+    configs:
+      - name: CONFIG_ARCH_ZYNQMP=y
+        type: mandatory
+      - name: RTC_DRV_PL031
+        type: test
+    tags:
+      - ok
+      - xilinx
+# Cannot use virt due to https://bugzilla.redhat.com/show_bug.cgi?id=1633328
+# a virt can be created and depend on ARM_LPAE
+  - name: qemu-arm-virt-2.11
+    arch: arm
+    devicetype: qemu
+    devicename: qemu-arm-virt-2.11
+    kernelfile: zImage
+    mach: qemu
+    qemu:
+        machine: virt-2.11
+        memory: 1024
+        cpu: cortex-a15
+        netdevice: tap
+        guestfs_interface: virtio
+        console_device: ttyAMA0
+        append: "console=ttyAMA0 root=/dev/ram0"
+    configs:
+      - name: CONFIG_ARCH_VIRT=y
+        type: mandatory
+      - name: CONFIG_SERIAL_AMBA_PL011=y
+        type: mandatory
+      - name: CONFIG_PCI_HOST_GENERIC=
+        type: test
+      - name: CONFIG_RTC_DRV_PL031=
+        type: test
+      - name: CONFIG_GPIO_PL061=
+    tags:
+      - ok
+      - virt
+  - name: qemu-vexpress-a9
+    arch: arm
+    devicetype: qemu
+    devicename: qemu-vexpress-a9
+    kernelfile: zImage
+    dtb: vexpress-v2p-ca9.dtb
+    mach: qemu
+    qemu:
+        machine: vexpress-a9
+        cpu: cortex-a9
+        model: model=lan9118
+        netdevice: tap
+        guestfs_interface: none
+        console_device: ttyAMA0
+        append: "console=ttyAMA0 root=/dev/ram0"
+        extra_options:
+        - '-device virtio-blk-device,drive=lavatest'
+    configs:
+      - name: CONFIG_ARCH_VEXPRESS
+        type: mandatory
+      - name: CONFIG_SMC91X
+        type: test
+      - name: RTC_DRV_PL031
+        type: test
+    tags:
+      - ok
+      - vexpress
+  - name: qemu-vexpress-a15
+    arch: arm
+    devicetype: qemu
+    devicename: qemu-vexpress-a15
+    kernelfile: zImage
+    dtb: vexpress-v2p-ca15-tc1.dtb
+    mach: qemu
+    qemu:
+        machine: vexpress-a15
+        cpu: cortex-a15
+        model: model=lan9118
+        netdevice: tap
+        guestfs_interface: none
+        console_device: ttyAMA0
+        append: "console=ttyAMA0 root=/dev/ram0"
+        extra_options:
+        - '-device virtio-blk-device,drive=lavatest'
+    configs:
+      - name: CONFIG_ARCH_VEXPRESS
+        type: mandatory
+      - name: CONFIG_SMC91X
+        type: test
+      - name: RTC_DRV_PL031
+        type: test
+    tags:
+      - ok
+      - vexpress
+  - name: MIPS malta
+    arch: mips
+    devicetype: qemu
+    devicename: qemu-mips-malta
+    kernelfile: vmlinux
+    mach: mips
+    qemu:
+        machine: malta
+        memory: 256
+        model: model=pcnet
+        netdevice: tap
+        append: "console=ttyS0 root=/dev/ram0"
+        no_kvm: True
+    configs:
+      - name: CONFIG_MIPS_MALTA=y
+        type: mandatory
+      - name: CONFIG_PCNET=
+      - name: CONFIG_RTC_CMOS=
+      - name: CONFIG_PIIX=
+    tags:
+      - ok
+  - name: malta64
+    arch: mips
+    larch: mips
+    devicetype: qemu
+    devicename: qemu-malta64
+    kernelfile: vmlinux
+    mach: mips64
+    qemu:
+        machine: malta
+        memory: 256
+        model: model=pcnet
+        netdevice: tap
+        append: "console=ttyS0 root=/dev/ram0"
+    configs:
+      - name: "CONFIG_64BIT=y"
+        type: mandatory
+      - name: CONFIG_MIPS_MALTA=y
+        type: mandatory
+      - name: CONFIG_PCNET
+      - name: CONFIG_RTC_CMOS
+      - name: CONFIG_PIIX
+    tags:
+      - ok
+  - name: qemu q800
+    arch: m68k
+    devicetype: qemu
+    devicename: qemu-m68k-q800
+    kernelfile: vmlinux
+    mach: m68k
+    qemu:
+        machine: q800
+        cpu: m68040
+        netdevice: tap
+        guestfs_interface: scsi
+        model: model=dp83932
+        netdevice: tap
+        console_device: ttyS0
+        no_kvm: True
+        append: "console=ttyS0 root=/dev/ram0"
+    configs:
+    tags:
+      - ko
+  - name: qemu x86_64
+    arch: x86_64
+    devicetype: qemu
+    devicename: qemu-x86_64
+    kernelfile: bzImage
+    mach: x86_64
+    qemu:
+        machine: pc
+        memory: 2048
+        guestfs_interface: ide
+        cpu: qemu64
+        netdevice: tap
+        model: model=e1000
+        netdevice: tap
+        console_device: ttyS0
+        append: "console=ttyS0 root=/dev/ram0"
+        extra_options:
+        - '-object cryptodev-backend-builtin,id=cryptodev0'
+        - '-device virtio-crypto-pci,id=crypto0,cryptodev=cryptodev0'
+        - '-vga virtio'
+    configs:
+    tags:
+      - ok
+  - name: qemu x86
+    arch: x86
+    devicetype: qemu
+    devicename: qemu-x86
+    kernelfile: bzImage
+    mach: x86
+    qemu:
+        machine: pc
+        cpu: qemu32
+        guestfs_interface: ide
+        netdevice: tap
+        model: model=e1000
+        netdevice: tap
+        append: "console=ttyS0 root=/dev/ram0"
+    configs:
+    tags:
+      - ok
+  - name: QEMU alpha DP264/CLIPPER
+    arch: alpha
+    devicetype: qemu
+    devicename: qemu-alpha
+    kernelfile: vmlinux
+    mach: alpha
+    qemu:
+        machine: clipper
+        smp: 4
+        memory: 512
+        guestfs_interface: ide
+        model: model=pcnet
+        netdevice: tap
+        append: "console=ttyS0 root=/dev/ram0"
+        no_kvm: True
+    configs:
+    tags:
+      - ok
+  - name: QEMU PPC G3beige
+    arch: powerpc
+    devicetype: qemu
+    devicename: qemu-ppc-G3beige
+    kernelfile: vmlinux
+    mach: powerpc
+    qemu:
+        machine: g3beige
+        model: model=pcnet
+        netdevice: tap
+        memory: 256
+        guestfs_interface: ide
+        console_device: ttyS0
+        append: "console=ttyPZ0 root=/dev/ram0"
+        no_kvm: True
+    configs:
+      - name: CONFIG_PPC_PMAC=y
+        type: mandatory
+      - name: CONFIG_SERIAL_PMACZILOG=y
+        type: mandatory
+    tags:
+      - ok
+      - g3beige
+  - name: QEMU PPC Mac99
+    arch: powerpc
+    devicetype: qemu
+    devicename: qemu-ppc-mac99
+    kernelfile: vmlinux
+    mach: powerpc
+    qemu:
+        machine: mac99,via=pmu
+        netdevice: tap
+        model: model=sungem
+        guestfs_interface: ide
+        append: "console=ttyPZ0 root=/dev/ram0"
+        no_kvm: True
+    configs:
+      - name: CONFIG_PPC_PMAC=y
+        type: mandatory
+      - name: CONFIG_SERIAL_PMACZILOG=y
+        type: mandatory
+    tags:
+      - ok
+      - mac99
+  - name: QEMU PPC64 pseries
+    arch: powerpc64
+    larch: powerpc
+    devicetype: qemu
+    devicename: qemu-ppc64-pseries
+    kernelfile: vmlinux
+    mach: powerpc64
+    qemu:
+        machine: pseries
+        cpu: POWER8
+        model: model=e1000
+        netdevice: tap
+        guestfs_interface: scsi
+        console_device: hvc0
+        append: "console=hvc0 root=/dev/ram0"
+        no_kvm: True
+    configs:
+      - name: CONFIG_PPC_PSERIES=y
+        type: mandatory
+    tags:
+      - ok
+  - name: QEMU hppa
+    arch: parisc
+    devicetype: qemu
+    devicename: qemu-hppa
+    kernelfile: vmlinux
+    mach: parisc
+    qemu:
+        machine: hppa
+        netdevice: tap
+        memory: 512
+        guestfs_interface: scsi
+        append: "console=ttyS0 root=/dev/ram0"
+        no_kvm: True
+    configs:
+      - name: CONFIG_PARISC=y
+        type: mandatory
+    tags:
+      - ok
+  - name: QEMU s390
+    arch: s390
+    devicetype: qemu
+    devicename: qemu-s390
+    kernelfile: bzImage
+    mach: s390
+    qemu:
+        machine: s390-ccw-virtio
+        netdevice: tap
+        memory: 512
+        guestfs_interface: virtio
+        append: "console=ttyS0 root=/dev/ram0"
+        no_kvm: True
+    configs:
+      - name: CONFIG_S390=y
+        type: mandatory
+    tags:
+      - ok
