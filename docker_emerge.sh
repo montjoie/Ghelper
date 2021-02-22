@@ -10,10 +10,16 @@ for kernel_sources in "$@"; do
       gentoo_rootfs=$(docker run -d --name gentoo"${currentdate}" gentoo/stage3-amd64:latest tail -f /dev/null)
       docker exec "${gentoo_rootfs}" wget --quiet https://github.com/gentoo/gentoo/archive/master.zip -O /master.zip
       docker exec "${gentoo_rootfs}" unzip -q master.zip
+      docker exec "${gentoo_rootfs}" cp -a /gentoo-master/ /var/db/repos/gentoo/
+      docker exec "${gentoo_rootfs}" ls -l /var/db/repos/gentoo/
       libself_recent_ebuild=$(docker exec "${gentoo_rootfs}" find /gentoo-master/dev-libs/libelf/ -iname "*.ebuild" | sort -Vr | head -n 1)
       bc_recent_ebuild=$(docker exec "${gentoo_rootfs}" find /gentoo-master/sys-devel/bc -iname "*.ebuild" | sort -Vr | head -n 1)
-      docker exec "${gentoo_rootfs}" /usr/bin/ebuild "${libself_recent_ebuild}" clean merge
-      docker exec "${gentoo_rootfs}" /usr/bin/ebuild "${bc_recent_ebuild}" clean merge
+      echo "DEBUG: emerge $libself_recent_ebuild"
+      #docker exec "${gentoo_rootfs}" /usr/bin/ebuild "${libself_recent_ebuild}" clean merge
+      echo "DEBUG: emerge $bc_recent_ebuild"
+      #docker exec "${gentoo_rootfs}" /usr/bin/ebuild "${bc_recent_ebuild}" clean merge
+      echo "DEBUG: emerge $kernel_sources"
+      ls -l /gentoo-master/sys-kernel/gentoo-sources/
       docker exec "${gentoo_rootfs}" /usr/bin/ebuild /gentoo-master/"${kernel_sources}" clean merge
       docker exec "${gentoo_rootfs}" ls /usr/src/linux -la
       docker exec -w /usr/src/linux "${gentoo_rootfs}" make defconfig
