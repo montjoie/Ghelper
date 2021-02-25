@@ -149,7 +149,8 @@ actions:
     timeout:
         minutes: 30
     definitions:
-        - repository: https://github.com/GKernelCI/Glava-tests.git
+        - repository: https://github.com/montjoie/Glava-tests.git
+          branch: disable-kselftests-arm
           from: git
           path: execs/kselftests.yaml
           name: kselftests
