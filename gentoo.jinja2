@@ -125,6 +125,11 @@ actions:
       gentoo:
         image_arg: '-drive format=raw,file={gentoo}'
         url: downloads://gentoo.ext2
+{%- if bios_url %}
+      bios:
+        image_arg: '-bios {bios}'
+        url: {{ bios_url }}
+{%- endif %}
 
 - boot:
     timeout:

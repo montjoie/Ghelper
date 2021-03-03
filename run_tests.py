@@ -127,6 +127,8 @@ def boot():
                 jobdict["guestfs_driveid"] = device["qemu"]["guestfs_driveid"]
             if "extra_options" in device["qemu"]:
                 jobdict["qemu_extra_options"] = device["qemu"]["extra_options"]
+            if "bios_url" in device["qemu"]:
+                jobdict["bios_url"] = device["qemu"]["bios_url"]
             if "extra_options" not in device["qemu"]:
                 jobdict["qemu_extra_options"] = []
             if "smp" in device["qemu"]:
