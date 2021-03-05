@@ -1,6 +1,8 @@
 #!/bin/sh
 
 set -e
+# for catching make failing but hiden by tee
+set -o pipefail
 
 MAKEOPTS="-j$(( $(getconf _NPROCESSORS_ONLN) + 1 ))"
 
