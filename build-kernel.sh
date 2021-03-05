@@ -5,6 +5,7 @@ set -e
 set -o pipefail
 
 MAKEOPTS="-j$(( $(getconf _NPROCESSORS_ONLN) + 1 ))"
+MAKEOPTS="-j12"
 
 if [ $# -lt 1 ]; then
 	echo "Usage: $(basename $0) arch BUILDER_NAME BUILD_NUMBER SOURCEDIR [build|modules]"
@@ -31,6 +32,11 @@ if [ "$2" = 'modules' ];then
 fi
 if [ -z "$ACTION" ];then
 	ACTION=build
+fi
+
+X=""
+if [ "$TOOLCHAIN_TODO" = 'gentoo' ];then
+	X="docker run --privileged -v cache_pkgbin:/gentoo/binpkgs -v gdocker_worker_data:/gentoo/buildbot docker-stage3-$ARCH:latest /gentoo/builder.sh $ARCH $(id -u) $(pwd) $FDIR"
 fi
 
 # renice itself
@@ -69,12 +75,23 @@ build() {
 	MAKEOPTS="$MAKEOPTS ARCH=$LINUX_ARCH O=$FDIR"
 
 	case $ACTION in
+	nbuild)
+		echo "DO: native build from $(pwd) with image docker-stage3-$ARCH:latest"
+		docker run --privileged -v gdocker_worker_data:/gentoo/buildbot docker-stage3-$ARCH:latest \
+			/gentoo/builder.sh $ARCH $(id -u) "$(pwd)" "$FDIR" mrproper
+
+		docker run --privileged -v gdocker_worker_data:/gentoo/buildbot docker-stage3-$ARCH:latest \
+			/gentoo/builder.sh $ARCH $(id -u) "$(pwd)" "$FDIR" $defconfig | tee --append $FDIR/build.lo
+
+		docker run --privileged -v gdocker_worker_data:/gentoo/buildbot docker-stage3-$ARCH:latest \
+			/gentoo/builder.sh $ARCH $(id -u) "$(pwd)" "$FDIR" mrproper
+	;;
 	build)
 		echo "DO: mrproper"
-		make $MAKEOPTS mrproper
+		$X make $MAKEOPTS mrproper
 
 		echo "DO: generate config from defconfig"
-		make $MAKEOPTS $defconfig | tee --append $FDIR/build.log
+		$X make $MAKEOPTS $defconfig | tee --append $FDIR/build.log
 
 		if [ -e "$BCDIR/config" ];then
 			cp $FDIR/.config $FDIR/.config.old
@@ -84,12 +101,12 @@ build() {
 				echo "DEBUG: add config $config"
 				cat $BCDIR/config/$config >> $FDIR/.config
 			done
-			make $MAKEOPTS olddefconfig >> $FDIR/build.log
+			$X make $MAKEOPTS olddefconfig >> $FDIR/build.log
 			diff -u $FDIR/.config.old $FDIR/.config || true
 		fi
 
 		echo "DO: build"
-		make $MAKEOPTS | tee --append $FDIR/build.log
+		$X make $MAKEOPTS | tee --append $FDIR/build.log
 	;;
 	modules)
 		rm -f $FDIR/nomodule
@@ -99,10 +116,10 @@ build() {
 			return 0
 		fi
 		echo "DO: build modules"
-		make $MAKEOPTS modules | tee --append $FDIR/build.log
+		$X make $MAKEOPTS modules | tee --append $FDIR/build.log
 		echo "DO: install modules"
 		mkdir $FDIR/modules
-		make $MAKEOPTS modules_install INSTALL_MOD_PATH="$FDIR/modules/" | tee --append $FDIR/build.log
+		$X make $MAKEOPTS modules_install INSTALL_MOD_PATH="$FDIR/modules/" | tee --append $FDIR/build.log
 		CPWD=$(pwd)
 		cd $FDIR/modules
 		echo "DO: targz modules"
