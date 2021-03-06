@@ -34,10 +34,20 @@ if [ -z "$ACTION" ];then
 	ACTION=build
 fi
 
+MAKEFUNC=do_make
 X=""
 if [ "$TOOLCHAIN_TODO" = 'gentoo' ];then
 	X="docker run --privileged -v cache_pkgbin:/gentoo/binpkgs -v gdocker_worker_data:/gentoo/buildbot docker-stage3-$ARCH:latest /gentoo/builder.sh $ARCH $(id -u) $(pwd) $FDIR"
+	MAKEFUNC=do_native_make
 fi
+
+do_make() {
+	echo "DOMAKE $*"
+}
+
+do_native_make() {
+	echo "DOMAKE native $*"
+}
 
 # renice itself
 renice -n 19 -p $$
@@ -75,22 +85,13 @@ build() {
 	MAKEOPTS="$MAKEOPTS ARCH=$LINUX_ARCH O=$FDIR"
 
 	case $ACTION in
-	nbuild)
-		echo "DO: native build from $(pwd) with image docker-stage3-$ARCH:latest"
-		docker run --privileged -v gdocker_worker_data:/gentoo/buildbot docker-stage3-$ARCH:latest \
-			/gentoo/builder.sh $ARCH $(id -u) "$(pwd)" "$FDIR" mrproper
-
-		docker run --privileged -v gdocker_worker_data:/gentoo/buildbot docker-stage3-$ARCH:latest \
-			/gentoo/builder.sh $ARCH $(id -u) "$(pwd)" "$FDIR" $defconfig | tee --append $FDIR/build.lo
-
-		docker run --privileged -v gdocker_worker_data:/gentoo/buildbot docker-stage3-$ARCH:latest \
-			/gentoo/builder.sh $ARCH $(id -u) "$(pwd)" "$FDIR" mrproper
-	;;
 	build)
 		echo "DO: mrproper"
+		$MAKEFUNC $MAKEOPTS mrproper
 		$X make $MAKEOPTS mrproper
 
 		echo "DO: generate config from defconfig"
+		$MAKEFUNC $MAKEOPTS $defconfig
 		$X make $MAKEOPTS $defconfig | tee --append $FDIR/build.log
 
 		if [ -e "$BCDIR/config" ];then

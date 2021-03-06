@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# gentoo_docker builder step 1
+# script preparing chroot
+
 update-binfmts --enable || exit $?
 
 mount -t proc none /gentoo/proc || exit $?

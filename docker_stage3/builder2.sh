@@ -12,8 +12,8 @@ FDIR=$4
 echo "BUILD: for $ARCH with $NBCPU cpus"
 
 echo "MAKEOPTS=-j$NBCPU" >> /etc/portage/make.conf
-emerge --nospinner --quiet --color n -bk1 -v sys-devel/bc virtual/libelf || exit $?
 emerge --info || exit $?
+emerge --nospinner --quiet --color n -bk1 -v sys-devel/bc virtual/libelf || exit $?
 
 echo "Create buildbot user with UID=$USERID"
 useradd --uid $USERID buildbot || exit $?
