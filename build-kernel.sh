@@ -35,18 +35,21 @@ if [ -z "$ACTION" ];then
 fi
 
 MAKEFUNC=do_make
-X=""
 if [ "$TOOLCHAIN_TODO" = 'gentoo' ];then
-	X="docker run --privileged -v cache_pkgbin:/gentoo/binpkgs -v gdocker_worker_data:/gentoo/buildbot docker-stage3-$ARCH:latest /gentoo/builder.sh $ARCH $(id -u) $(pwd) $FDIR"
 	MAKEFUNC=do_native_make
 fi
 
 do_make() {
 	echo "DOMAKE $*"
+	make $*
 }
 
 do_native_make() {
 	echo "DOMAKE native $*"
+	docker run --privileged \
+		-v cache_pkgbin:/gentoo/binpkgs \
+		-v gdocker_worker_data:/gentoo/buildbot \
+		docker-stage3-$ARCH:latest /gentoo/builder.sh $ARCH $(id -u) $(pwd) $FDIR $*
 }
 
 # renice itself
@@ -88,11 +91,9 @@ build() {
 	build)
 		echo "DO: mrproper"
 		$MAKEFUNC $MAKEOPTS mrproper
-		$X make $MAKEOPTS mrproper
 
 		echo "DO: generate config from defconfig"
-		$MAKEFUNC $MAKEOPTS $defconfig
-		$X make $MAKEOPTS $defconfig | tee --append $FDIR/build.log
+		$MAKEFUNC $MAKEOPTS $defconfig | tee --append $FDIR/build.log
 
 		if [ -e "$BCDIR/config" ];then
 			cp $FDIR/.config $FDIR/.config.old
@@ -102,12 +103,12 @@ build() {
 				echo "DEBUG: add config $config"
 				cat $BCDIR/config/$config >> $FDIR/.config
 			done
-			$X make $MAKEOPTS olddefconfig >> $FDIR/build.log
+			$MAKEFUNC $MAKEOPTS olddefconfig >> $FDIR/build.log
 			diff -u $FDIR/.config.old $FDIR/.config || true
 		fi
 
 		echo "DO: build"
-		$X make $MAKEOPTS | tee --append $FDIR/build.log
+		$MAKEFUNC $MAKEOPTS | tee --append $FDIR/build.log
 	;;
 	modules)
 		rm -f $FDIR/nomodule
@@ -117,10 +118,10 @@ build() {
 			return 0
 		fi
 		echo "DO: build modules"
-		$X make $MAKEOPTS modules | tee --append $FDIR/build.log
+		$MAKEFUNC $MAKEOPTS modules | tee --append $FDIR/build.log
 		echo "DO: install modules"
 		mkdir $FDIR/modules
-		$X make $MAKEOPTS modules_install INSTALL_MOD_PATH="$FDIR/modules/" | tee --append $FDIR/build.log
+		$MAKEFUNC $MAKEOPTS modules_install INSTALL_MOD_PATH="$FDIR/modules/" | tee --append $FDIR/build.log
 		CPWD=$(pwd)
 		cd $FDIR/modules
 		echo "DO: targz modules"
