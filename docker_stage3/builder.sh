@@ -14,6 +14,10 @@ if [ -z "$ARCH" ];then
 	exit 1
 fi
 
+echo "DEBUG: release"
+lsb_release
+cat /etc/debian_version
+
 echo "CHECK binary package"
 mkdir -p /gentoo/binpkgs/$ARCH || exit $?
 mount -o bind /gentoo/binpkgs/$ARCH /gentoo/var/cache/binpkgs ||exit $?
