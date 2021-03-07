@@ -1,4 +1,4 @@
-FROM debian:buster
+FROM debian:bullseye
 
 ARG stage3_url=http://ftp.free.fr/mirrors/ftp.gentoo.org//releases/arm64/autobuilds/20210226T005227Z/stage3-arm64-20210226T005227Z.tar.xz
 RUN apt-get update && apt-get -y install qemu qemu-system-arm wget xz-utils qemu-user-static unzip
